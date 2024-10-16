@@ -27,7 +27,11 @@
   "keywords": [
     "capacitor",
     "plugin",
-    "native"
+    "native",
+    "msal",
+    "microsoft",
+    "azure",
+    "authentication"
   ],
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
@@ -76,5 +80,8 @@
     "android": {
       "src": "android"
     }
+  },
+  "dependencies": {
+    "@azure/msal-browser": "^3.26.1"
   }
 }
