@@ -57,12 +57,12 @@ initializePcaInstance(options: BaseOptions) => Promise<void>
 ### login(...)
 
 ```typescript
-login(account?: AccountInfo | undefined) => Promise<AuthenticationResult>
+login(account?: { identifier?: string | undefined; } | undefined) => Promise<AuthenticationResult>
 ```
 
-| Param         | Type                                                |
-| ------------- | --------------------------------------------------- |
-| **`account`** | <code><a href="#accountinfo">AccountInfo</a></code> |
+| Param         | Type                                  |
+| ------------- | ------------------------------------- |
+| **`account`** | <code>{ identifier?: string; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#authenticationresult">AuthenticationResult</a>&gt;</code>
 
@@ -81,10 +81,10 @@ logout() => Promise<void>
 ### getAccounts()
 
 ```typescript
-getAccounts() => Promise<AccountInfo[]>
+getAccounts() => Promise<{ accounts: AccountInfo[]; }>
 ```
 
-**Returns:** <code>Promise&lt;AccountInfo[]&gt;</code>
+**Returns:** <code>Promise&lt;{ accounts: AccountInfo[]; }&gt;</code>
 
 --------------------
 

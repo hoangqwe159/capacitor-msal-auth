@@ -19,7 +19,9 @@ export declare type LogoutOptions = BaseOptions;
 export interface MsalPluginPlugin {
   echo(options: { value: string }): Promise<{ value: string }>;
   initializePcaInstance(options: BaseOptions): Promise<void>;
-  login(account?: AccountInfo): Promise<AuthenticationResult>;
+  login(account?: { identifier?: string }): Promise<AuthenticationResult>;
   logout(): Promise<void>;
-  getAccounts(): Promise<AccountInfo[]>;
+  getAccounts(): Promise<{
+    accounts: AccountInfo[];
+  }>;
 }

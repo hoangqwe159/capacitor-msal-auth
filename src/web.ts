@@ -30,7 +30,7 @@ export class MsalPluginWeb extends WebPlugin implements MsalPluginPlugin {
     await instance.initialize();
   }
 
-  public async login(account?: AccountInfo): Promise<AuthenticationResult> {
+  public async login(accountData?: { identifier?: string }): Promise<AuthenticationResult> {
     if (!instance) {
       throw new Error('PublicClientApplication not initialized');
     }
@@ -40,10 +40,17 @@ export class MsalPluginWeb extends WebPlugin implements MsalPluginPlugin {
     }
 
     try {
-      if (account) {
-        return await this.acquireTokenSilently(account).catch(async () => {
-          return await this.acquireTokenInteractively();
-        });
+      if (accountData?.identifier) {
+        const account =
+          instance.getAccountByHomeId(accountData.identifier) ||
+          instance.getAccountByLocalId(accountData.identifier) ||
+          instance.getAccountByUsername(accountData.identifier);
+
+        if (account) {
+          return await this.acquireTokenSilently(account).catch(async () => {
+            return await this.acquireTokenInteractively();
+          });
+        }
       }
 
       return await this.acquireTokenInteractively();
@@ -53,8 +60,6 @@ export class MsalPluginWeb extends WebPlugin implements MsalPluginPlugin {
     }
   }
 
-  // "8d241d8c-3dd3-4ed8-b8bc-b9ea8090cca1"
-
   public async logout(): Promise<void> {
     if (!instance) {
       throw new Error('PublicClientApplication not initialized');
@@ -63,12 +68,14 @@ export class MsalPluginWeb extends WebPlugin implements MsalPluginPlugin {
     return await instance.logoutPopup();
   }
 
-  public async getAccounts(): Promise<AccountInfo[]> {
+  public async getAccounts(): Promise<{
+    accounts: AccountInfo[];
+  }> {
     if (!instance) {
       throw new Error('PublicClientApplication not initialized');
     }
 
-    return instance.getAllAccounts();
+    return { accounts: instance.getAllAccounts() };
   }
 
   private async acquireTokenInteractively(): Promise<AuthenticationResult> {
