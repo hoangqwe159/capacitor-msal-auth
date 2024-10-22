@@ -20,4 +20,8 @@ public class MsalPluginPlugin: CAPPlugin, CAPBridgedPlugin {
             "value": implementation.echo(value)
         ])
     }
+    
+    @objc func initializePcaInstance(_ call: CAPPluginCall) {
+        implementation.initializePcaInstance(call)
+    }
 }
