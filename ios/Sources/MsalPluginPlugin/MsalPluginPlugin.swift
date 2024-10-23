@@ -10,7 +10,11 @@ public class MsalPluginPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "MsalPluginPlugin"
     public let jsName = "MsalPlugin"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "initializePcaInstance", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "login", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "logout", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getAccounts", returnType: CAPPluginReturnPromise)
     ]
     private let implementation = MsalPlugin()
 
@@ -20,8 +24,25 @@ public class MsalPluginPlugin: CAPPlugin, CAPBridgedPlugin {
             "value": implementation.echo(value)
         ])
     }
-    
+
     @objc func initializePcaInstance(_ call: CAPPluginCall) {
-        implementation.initializePcaInstance(call)
+        guard let bridgeViewController = bridge?.viewController else {
+            call.reject("Unable to get Capacitor bridge.viewController")
+            return
+        }
+
+        implementation.initializePcaInstance(call, bridgeViewController: bridgeViewController)
+    }
+
+    @objc func login(_ call: CAPPluginCall) {
+        implementation.login(call)
+    }
+
+    @objc func logout(_ call: CAPPluginCall) {
+        implementation.logout(call)
+    }
+
+    @objc func getAccounts(_ call: CAPPluginCall) {
+        implementation.getAccounts(call: call)
     }
 }

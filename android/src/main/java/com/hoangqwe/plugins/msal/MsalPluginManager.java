@@ -56,17 +56,17 @@ public class MsalPluginManager {
     }
 
     public void initializePcaInstance(
-            String clientId,
-            String domainHint,
-            String tenant,
-            AuthorityType authorityType,
-            String customAuthorityUrl,
-            String keyHash,
-            Boolean brokerRedirectUriRegistered,
-            List<String> scopes) throws MsalException, InterruptedException, IOException, JSONException {
+        String clientId,
+        String domainHint,
+        String tenant,
+        AuthorityType authorityType,
+        String customAuthorityUrl,
+        String keyHash,
+        Boolean brokerRedirectUriRegistered,
+        List<String> scopes
+    ) throws MsalException, InterruptedException, IOException, JSONException {
         String tenantId = (tenant != null ? tenant : "common");
-        String authorityUrl = customAuthorityUrl != null ? customAuthorityUrl
-                : "https://login.microsoftonline.com/" + tenantId;
+        String authorityUrl = customAuthorityUrl != null ? customAuthorityUrl : "https://login.microsoftonline.com/" + tenantId;
         String urlEncodedKeyHash = URLEncoder.encode(keyHash, StandardCharsets.UTF_8);
         String redirectUri = "msauth://" + this.context.getPackageName() + "/" + urlEncodedKeyHash;
 
@@ -77,8 +77,7 @@ public class MsalPluginManager {
             case AAD:
                 authorityConfig.put("type", AuthorityType.AAD.name());
                 authorityConfig.put("authority_url", authorityUrl);
-                authorityConfig.put("audience",
-                        (new JSONObject()).put("type", "AzureADMultipleOrgs").put("tenant_id", tenantId));
+                authorityConfig.put("audience", (new JSONObject()).put("type", "AzureADMultipleOrgs").put("tenant_id", tenantId));
                 configFile.put("broker_redirect_uri_registered", brokerRedirectUriRegistered);
                 break;
             case B2C:
@@ -96,8 +95,7 @@ public class MsalPluginManager {
         configFile.put("authorities", (new JSONArray()).put(authorityConfig));
 
         File config = writeJSONObjectConfig(configFile);
-        this.instance = publicClientApplicationFactory.createMultipleAccountPublicClientApplication(this.context,
-                config);
+        this.instance = publicClientApplicationFactory.createMultipleAccountPublicClientApplication(this.context, config);
         this.clientId = clientId;
         this.domainHint = domainHint;
         this.tenant = tenant;
@@ -155,7 +153,8 @@ public class MsalPluginManager {
                         Logger.error("Error occurred during getAccounts", exception);
                         call.reject("Error occurred during getAccounts");
                     }
-                });
+                }
+            );
     }
 
     public void logout(PluginCall call) {
@@ -178,7 +177,8 @@ public class MsalPluginManager {
                         Logger.error("Error occurred during logOut", exception);
                         call.reject("Error occurred during logOut");
                     }
-                });
+                }
+            );
     }
 
     private JSObject getJSObjectAccount(IAccount account) {
@@ -205,8 +205,7 @@ public class MsalPluginManager {
         return config;
     }
 
-    private void acquireToken(String identifier, final TokenResultCallback callback)
-            throws MsalException, InterruptedException {
+    private void acquireToken(String identifier, final TokenResultCallback callback) throws MsalException, InterruptedException {
         if (identifier != null) {
             try {
                 acquireTokenSilently(identifier, callback);
@@ -218,11 +217,10 @@ public class MsalPluginManager {
         }
     }
 
-    private void acquireTokenSilently(String identifier, final TokenResultCallback callback)
-            throws MsalException, InterruptedException {
+    private void acquireTokenSilently(String identifier, final TokenResultCallback callback) throws MsalException, InterruptedException {
         AcquireTokenSilentParameters.Builder builder = new AcquireTokenSilentParameters.Builder()
-                .withScopes(this.scopes)
-                .fromAuthority(this.instance.getConfiguration().getDefaultAuthority().getAuthorityURL().toString());
+            .withScopes(this.scopes)
+            .fromAuthority(this.instance.getConfiguration().getDefaultAuthority().getAuthorityURL().toString());
 
         builder = builder.forAccount(this.instance.getAccount(identifier));
 
@@ -234,28 +232,29 @@ public class MsalPluginManager {
 
     private void acquireTokenInteractively(final TokenResultCallback callback) {
         AcquireTokenParameters.Builder params = new AcquireTokenParameters.Builder()
-                .startAuthorizationFromActivity(this.activity)
-                .withScopes(scopes)
-                .withPrompt(Prompt.SELECT_ACCOUNT)
-                .withCallback(
-                        new AuthenticationCallback() {
-                            @Override
-                            public void onCancel() {
-                                Logger.info("Login cancelled");
-                                callback.tokenReceived(null);
-                            }
+            .startAuthorizationFromActivity(this.activity)
+            .withScopes(scopes)
+            .withPrompt(Prompt.SELECT_ACCOUNT)
+            .withCallback(
+                new AuthenticationCallback() {
+                    @Override
+                    public void onCancel() {
+                        Logger.info("Login cancelled");
+                        callback.tokenReceived(null);
+                    }
 
-                            public void onSuccess(IAuthenticationResult authenticationResult) {
-                                Logger.info(authenticationResult.getAccessToken());
-                                callback.tokenReceived(authenticationResult);
-                            }
+                    public void onSuccess(IAuthenticationResult authenticationResult) {
+                        Logger.info(authenticationResult.getAccessToken());
+                        callback.tokenReceived(authenticationResult);
+                    }
 
-                            @Override
-                            public void onError(MsalException ex) {
-                                Logger.error("Unable to acquire token interactively", ex);
-                                callback.tokenReceived(null);
-                            }
-                        });
+                    @Override
+                    public void onError(MsalException ex) {
+                        Logger.error("Unable to acquire token interactively", ex);
+                        callback.tokenReceived(null);
+                    }
+                }
+            );
 
         this.instance.acquireToken(params.build());
     }
