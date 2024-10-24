@@ -21,7 +21,7 @@ export class MsalPluginWeb extends WebPlugin implements MsalPluginPlugin {
         clientId: options.clientId,
         authority: options.authorityUrl || `https://login.microsoftonline.com/${options.tenant || 'common'}/`,
         ...(options.knownAuthorities ? { knownAuthorities: options.knownAuthorities } : {}),
-        redirectUri: window.location.origin, // Points to window.location.origin. You must register this URI on Microsoft Entra admin center/App Registration.
+        redirectUri: options.redirectUri ||  window.location.origin, // Points to window.location.origin. You must register this URI on Microsoft Entra admin center/App Registration.
       },
     });
 

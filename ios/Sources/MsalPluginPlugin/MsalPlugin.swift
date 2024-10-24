@@ -202,6 +202,10 @@ import MSAL
         ret["authenticationScheme"] = result.authenticationScheme
         ret["expiresOn"] = result.expiresOn?.description
         ret["scopes"] = result.scopes
+        ret["idToken"] = result.idToken
+        ret["authority"] = result.authority.description
+        ret["uniqueId"] = result.tenantProfile.identifier
+        
         ret["account"] = account
 
         call.resolve(ret)

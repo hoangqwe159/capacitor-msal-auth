@@ -1,4 +1,28 @@
-import type { AccountInfo, AuthenticationResult } from '@azure/msal-browser';
+import type { AccountInfo } from '@azure/msal-browser';
+
+interface AuthenticationResult {
+  accessToken: string;
+  account: AccountInfo;
+  tenantId: string;
+  idToken: string;
+  scopes: string[];
+  authority: string;
+  expiresOn: Date | string | null;
+  uniqueId?: string;
+  idTokenClaims?: object;
+  fromCache?: boolean;
+  extExpiresOn?: Date;
+  refreshOn?: Date;
+  tokenType?: string;
+  correlationId?: string;
+  requestId?: string;
+  state?: string;
+  familyId?: string;
+  cloudGraphHostName?: string;
+  msGraphHost?: string;
+  code?: string;
+  fromNativeBroker?: boolean;
+}
 
 export interface BaseOptions {
   clientId: string;

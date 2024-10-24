@@ -127,6 +127,8 @@ public class MsalPluginManager {
 
             JSObject account = getJSObjectAccount(resultAccount);
             accountInfo.put("account", account);
+            accountInfo.put("idToken", resultAccount.getIdToken());
+            accountInfo.put("authority", resultAccount.getAuthority());
 
             call.resolve(accountInfo);
         });
