@@ -67,7 +67,7 @@ public class MsalPluginManager {
     ) throws MsalException, InterruptedException, IOException, JSONException {
         String tenantId = (tenant != null ? tenant : "common");
         String authorityUrl = customAuthorityUrl != null ? customAuthorityUrl : "https://login.microsoftonline.com/" + tenantId;
-        String urlEncodedKeyHash = URLEncoder.encode(keyHash, StandardCharsets.UTF_8);
+        String urlEncodedKeyHash = URLEncoder.encode(keyHash, "UTF-8");
         String redirectUri = "msauth://" + this.context.getPackageName() + "/" + urlEncodedKeyHash;
 
         JSONObject configFile = new JSONObject();
