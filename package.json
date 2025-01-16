@@ -1,6 +1,6 @@
 {
   "name": "capacitor-msal-auth",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This Capacitor plugin provides seamless integration with the Microsoft Authentication Library (MSAL), enabling secure multi-account login support for both web and mobile platforms. Easily manage authentication flows with Microsoft Azure AD and support multiple accounts within your app.",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
