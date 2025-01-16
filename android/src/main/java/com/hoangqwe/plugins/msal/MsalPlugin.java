@@ -60,16 +60,21 @@ public class MsalPlugin extends Plugin {
             return;
         }
 
-        implementation.initializePcaInstance(
-            clientId,
-            domainHint,
-            tenant,
-            authorityType,
-            authorityUrl,
-            keyHash,
-            brokerRedirectUriRegistered,
-            scopes
-        );
+        try {
+            implementation.initializePcaInstance(
+                clientId,
+                domainHint,
+                tenant,
+                authorityType,
+                authorityUrl,
+                keyHash,
+                brokerRedirectUriRegistered,
+                scopes
+            );
+        } catch (Exception e) {
+            call.resolve();
+        }
+
 
         call.resolve();
     }

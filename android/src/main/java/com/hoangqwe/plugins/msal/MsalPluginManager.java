@@ -1,6 +1,11 @@
 package com.hoangqwe.plugins.msal;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
+import android.net.Uri;
+import android.util.Base64;
 import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import com.getcapacitor.JSArray;
@@ -16,12 +21,15 @@ import com.microsoft.identity.client.ICurrentAccountResult;
 import com.microsoft.identity.client.IMultipleAccountPublicClientApplication;
 import com.microsoft.identity.client.IPublicClientApplication;
 import com.microsoft.identity.client.Prompt;
+import com.microsoft.identity.client.exception.MsalClientException;
 import com.microsoft.identity.client.exception.MsalException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +46,7 @@ public class MsalPluginManager {
     private String clientId;
     private String domainHint;
     private String tenant;
+    private String redirectUri;
     private AuthorityType authorityType;
     private String customAuthorityUrl;
     private String keyHash;
@@ -70,6 +79,7 @@ public class MsalPluginManager {
         String urlEncodedKeyHash = URLEncoder.encode(keyHash, "UTF-8");
         String redirectUri = "msauth://" + this.context.getPackageName() + "/" + urlEncodedKeyHash;
 
+        this.redirectUri = redirectUri;
         JSONObject configFile = new JSONObject();
         JSONObject authorityConfig = new JSONObject();
 
@@ -112,51 +122,89 @@ public class MsalPluginManager {
         Logger.debug("Pca instance is initialized");
     }
 
+    // Verifies broker redirect URI against the app's signature, to make sure that this is legit.
+    private void verifyRedirectUriWithAppSignature() throws MsalClientException {
+        final String packageName = this.context.getPackageName();
+        try {
+            final PackageInfo info = this.context.getPackageManager().getPackageInfo(packageName, PackageManager.GET_SIGNATURES);
+            for (final Signature signature : info.signatures) {
+                final MessageDigest messageDigest = MessageDigest.getInstance("SHA");
+                messageDigest.update(signature.toByteArray());
+                final String signatureHash = Base64.encodeToString(messageDigest.digest(), Base64.NO_WRAP);
+
+                final Uri.Builder builder = new Uri.Builder();
+                final Uri uri = builder.scheme("msauth")
+                        .authority(packageName)
+                        .appendPath(signatureHash)
+                        .build();
+
+                if (this.redirectUri.equalsIgnoreCase(uri.toString())) {
+                    // Life is good.
+                    return;
+                }
+            }
+        } catch (PackageManager.NameNotFoundException | NoSuchAlgorithmException e) {
+            Log.e(this.context.getPackageName(), "Unexpected error in verifyRedirectUriWithAppSignature()", e);
+        }
+
+        throw new MsalClientException(
+                MsalClientException.REDIRECT_URI_VALIDATION_ERROR,
+                "The redirect URI in the configuration file doesn't match with the one " +
+                        "generated with package name and signature hash. Please verify the uri in the config file and your app registration in Azure portal.");
+    }
+
     public void login(String identifier, PluginCall call) throws MsalException, InterruptedException {
         acquireToken(identifier, result -> {
-            JSObject accountInfo = new JSObject();
+                JSObject accountInfo = new JSObject();
 
-            accountInfo.put("accessToken", result.getAccessToken());
-            accountInfo.put("authorizationHeader", result.getAuthorizationHeader());
-            accountInfo.put("authenticationScheme", result.getAuthenticationScheme());
-            accountInfo.put("tenantId", result.getTenantId());
-            accountInfo.put("expiresOn", result.getExpiresOn().toString());
-            accountInfo.put("scopes", new JSONArray(Arrays.asList(result.getScope())));
+                accountInfo.put("accessToken", result.getAccessToken());
+                accountInfo.put("authorizationHeader", result.getAuthorizationHeader());
+                accountInfo.put("authenticationScheme", result.getAuthenticationScheme());
+                accountInfo.put("tenantId", result.getTenantId());
+                accountInfo.put("expiresOn", result.getExpiresOn().toString());
+                accountInfo.put("scopes", new JSONArray(Arrays.asList(result.getScope())));
 
-            IAccount resultAccount = result.getAccount();
+                IAccount resultAccount = result.getAccount();
 
-            JSObject account = getJSObjectAccount(resultAccount);
-            accountInfo.put("account", account);
-            accountInfo.put("idToken", resultAccount.getIdToken());
-            accountInfo.put("authority", resultAccount.getAuthority());
+                JSObject account = getJSObjectAccount(resultAccount);
+                accountInfo.put("account", account);
+                accountInfo.put("idToken", resultAccount.getIdToken());
+                accountInfo.put("authority", resultAccount.getAuthority());
 
-            call.resolve(accountInfo);
+
+                call.resolve(accountInfo);
+
         });
     }
 
     public void getAccounts(PluginCall call) {
-        this.instance.getAccounts(
-                new IPublicClientApplication.LoadAccountsCallback() {
-                    @Override
-                    public void onTaskCompleted(List<IAccount> result) {
-                        JSArray accountsArray = new JSArray();
-                        for (IAccount account : result) {
-                            accountsArray.put(getJSObjectAccount(account));
+        try {
+            this.instance.getAccounts(
+                    new IPublicClientApplication.LoadAccountsCallback() {
+                        @Override
+                        public void onTaskCompleted(List<IAccount> result) {
+                            JSArray accountsArray = new JSArray();
+                            for (IAccount account : result) {
+                                accountsArray.put(getJSObjectAccount(account));
+                            }
+
+                            JSObject response = new JSObject();
+                            response.put("accounts", accountsArray);
+
+                            call.resolve(response);
                         }
 
-                        JSObject response = new JSObject();
-                        response.put("accounts", accountsArray);
-
-                        call.resolve(response);
+                        @Override
+                        public void onError(MsalException exception) {
+                            Logger.error("Error occurred during getAccounts", exception);
+                            call.reject("Error occurred during getAccounts");
+                        }
                     }
-
-                    @Override
-                    public void onError(MsalException exception) {
-                        Logger.error("Error occurred during getAccounts", exception);
-                        call.reject("Error occurred during getAccounts");
-                    }
-                }
             );
+        } catch (Exception e) {
+            Logger.error("Error occurred during getAccounts", e);
+            call.reject("Error occurred during getAccounts");
+        }
     }
 
     public void logout(PluginCall call) {
